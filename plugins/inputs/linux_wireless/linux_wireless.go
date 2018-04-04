@@ -81,6 +81,7 @@ func (ns *Wireless) gatherWireless(data []byte, acc telegraf.Accumulator) error 
 		}
 		for z := 0; z < len(wirelessData.Data[x]); z++ {
 			entries[wirelessData.Headers[z]] = wirelessData.Data[x][z]
+			//fmt.Println(entries[wirelessData.Headers[z]])
 		}
 		acc.AddFields("wireless", entries, tags)
 	}
@@ -116,39 +117,48 @@ func loadWirelessTable(table []byte, dumpZeros bool) (WirelessData, error) {
 				continue
 			}
 			header_fields[header_count] = strings.ToLower(strings.Replace(h1[y]+"_"+tmpStr[z], " ", "_", -1))
+			//fmt.Println(header_fields[header_count])
 			header_count++
 		}
 	}
 	// last 2 are simple multi-line headers, so join them
 	for t := len(h1) - 2; t < len(h1); t++ {
 		header_fields[header_count] = strings.ToLower(h1[t] + "_" + h2[t])
+		//fmt.Println(header_fields[header_count])
 		header_count++
 	}
 	// now let's go through the data and save it for return.
 	// if we're dumping zeros, we will also dump the header for the
 	// zero data.
-	for x := 2; x < len(myLines); x++ {
+	for x := 2; x < len(myLines)-1; x++ {
 		data_count := 0
 		metrics := strings.Fields(myLines[x])
 		sub_data := make([]int64, len(metrics))
-		for z := 0; z < len(metrics)-1; z++ {
+		for z := 0; z < len(metrics)-2; z++ {
 			if strings.Index(metrics[z], ":") > 0 {
-				tags[x-2] = metrics[0]
+				tags[x-2] = metrics[z]
 			} else {
 				if metrics[z] == "0" {
-					if !dumpZeros {
+					if dumpZeros {
+						continue
 						// if we're dumping zeros, we dump the header that goes with it.
-						header_fields = append(header_fields[:x], header_fields[x+1:]...)
+						if x == len(header_fields) {
+							//fmt.Println("Dump Zeros")
+						} else {
+							header_fields = append(header_fields[:x], header_fields[x+1:]...)
+						}
+
 						continue
 					}
-				} else {
-					// clean up the string as they have extraneous characters in them
-					value, err = strconv.ParseInt(strings.Replace(metrics[z], ".", "", -1), 10, 64)
-					if err == nil {
-						sub_data[data_count] = value
-						data_count++
-					}
 				}
+
+				// clean up the string as they have extraneous characters in them
+				value, err = strconv.ParseInt(strings.Replace(metrics[z], ".", "", -1), 10, 64)
+				if err == nil {
+					sub_data[data_count] = value
+					data_count++
+				}
+
 			}
 		}
 		data[x-2] = sub_data
