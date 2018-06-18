@@ -1,4 +1,4 @@
-package k30_reader
+package linux_battery
 
 import (
 	"github.com/influxdata/telegraf"
