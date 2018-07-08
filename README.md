@@ -40,9 +40,9 @@ Ansible role: https://github.com/rossmcdonald/telegraf
 
 ### From Source:
 
-Telegraf requires golang version 1.8+, the Makefile requires GNU make.
+Telegraf requires golang version 1.9 or newer, the Makefile requires GNU make.
 
-Dependencies are managed with [gdm](https://github.com/sparrc/gdm),
+Dependencies are managed with [dep](https://github.com/golang/dep),
 which is installed by the Makefile if you don't have it already.
 
 1. [Install Go](https://golang.org/doc/install)
@@ -211,7 +211,9 @@ configuration options.
 * [snmp_legacy](./plugins/inputs/snmp_legacy)
 * [solr](./plugins/inputs/solr)
 * [sql server](./plugins/inputs/sqlserver) (microsoft)
+* [syslog](./plugins/inputs/syslog)
 * [teamspeak](./plugins/inputs/teamspeak)
+* [tengine](./plugins/inputs/tengine)
 * [tomcat](./plugins/inputs/tomcat)
 * [twemproxy](./plugins/inputs/twemproxy)
 * [unbound](./plugins/inputs/unbound)
@@ -280,6 +282,7 @@ formats may be used with input plugins supporting the `data_format` option:
 * [basicstats](./plugins/aggregators/basicstats)
 * [minmax](./plugins/aggregators/minmax)
 * [histogram](./plugins/aggregators/histogram)
+* [valuecounter](./plugins/aggregators/valuecounter)
 
 ## Output Plugins
 

@@ -362,24 +362,6 @@ func (a *Agent) Run(shutdown chan struct{}) error {
 	metricC := make(chan telegraf.Metric, 100)
 	aggC := make(chan telegraf.Metric, 100)
 
-	// Start all ServicePlugins
-	for _, input := range a.Config.Inputs {
-		input.SetDefaultTags(a.Config.Tags)
-		switch p := input.Input.(type) {
-		case telegraf.ServiceInput:
-			acc := NewAccumulator(input, metricC)
-			// Service input plugins should set their own precision of their
-			// metrics.
-			acc.SetPrecision(time.Nanosecond, 0)
-			if err := p.Start(acc); err != nil {
-				log.Printf("E! Service for input %s failed to start, exiting\n%s\n",
-					input.Name(), err.Error())
-				return err
-			}
-			defer p.Stop()
-		}
-	}
-
 	// Round collection to nearest interval by sleeping
 	if a.Config.Agent.RoundInterval {
 		i := int64(a.Config.Agent.Interval.Duration)
@@ -404,6 +386,28 @@ func (a *Agent) Run(shutdown chan struct{}) error {
 				a.Config.Agent.Interval.Duration)
 			agg.Run(acc, shutdown)
 		}(aggregator)
+	}
+
+	// Service inputs may immediately add metrics, if metrics are added before
+	// the aggregator starts they will be dropped.  Generally this occurs
+	// only during testing but it is an outstanding issue.
+	//
+	//   https://github.com/influxdata/telegraf/issues/4394
+	for _, input := range a.Config.Inputs {
+		input.SetDefaultTags(a.Config.Tags)
+		switch p := input.Input.(type) {
+		case telegraf.ServiceInput:
+			acc := NewAccumulator(input, metricC)
+			// Service input plugins should set their own precision of their
+			// metrics.
+			acc.SetPrecision(time.Nanosecond, 0)
+			if err := p.Start(acc); err != nil {
+				log.Printf("E! Service for input %s failed to start, exiting\n%s\n",
+					input.Name(), err.Error())
+				return err
+			}
+			defer p.Stop()
+		}
 	}
 
 	wg.Add(len(a.Config.Inputs))
